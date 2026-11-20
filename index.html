@@ -18,6 +18,7 @@ a{color:inherit}
 .gl{background:none;border:0;padding:8px 12px;border-radius:8px;font-weight:600;font-size:14px}
 .gl:hover,.grp.open .gl{background:var(--bg)}
 .gl::after{content:"▾";margin-left:6px;font-size:11px;color:var(--mut)}
+.lk{text-decoration:none;display:block}.lk::after{content:""}.lk[aria-current="page"]{background:var(--ink);color:var(--inkfg)}
 .dd{display:none;position:absolute;top:100%;left:0;min-width:210px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:6px;box-shadow:0 12px 32px rgba(0,0,0,.18)}
 .grp.open .dd{display:block}
 .dd a{display:block;padding:9px 12px;border-radius:8px;text-decoration:none;font-size:15px}
@@ -59,7 +60,7 @@ ul.pts{padding-left:20px;margin:12px 0}ul.pts li{margin:6px 0}
 #nav{display:none;position:absolute;top:100%;left:0;right:0;background:var(--card);border-bottom:1px solid var(--line);padding:8px 16px 16px;flex-direction:column;max-height:70vh;overflow:auto}
 #nav.open{display:flex}
 .gl{width:100%;text-align:left;padding:10px 4px;color:var(--mut);font-size:12px;text-transform:uppercase;letter-spacing:.08em;pointer-events:none}.gl::after{content:""}
-.dd{display:block;position:static;box-shadow:none;border:0;padding:0 0 6px}.dd a{padding:12px}
+.dd{display:block;position:static;box-shadow:none;border:0;padding:0 0 6px}.lk{pointer-events:auto;color:var(--fg);font-size:15px;text-transform:none;letter-spacing:0;padding:14px 12px;margin-top:6px}.lk[aria-current="page"]{color:var(--inkfg)}.dd a{padding:12px}
 }
 </style></head><body>
 <header class="top">
@@ -130,53 +131,57 @@ const PG={
  microsd:{g:0,v:'sd',hl:['portframe','portcover','porttab']},
  on:{g:1,v:'led',hl:[],led:'green:solid'},
  rec:{g:1,v:'led',hl:[],led:'blue:slow'},
- off:{g:1,v:'led',hl:[],led:'green:solid'}
+ off:{g:1,v:'led',hl:[],led:'green:solid'},
+ charge:{g:2,v:'usb',hl:['portframe','portcover','porttab']}
 };
-const ORDER=['camera','battery','usbc','microsd','on','rec','off'];
+const ORDER=['camera','battery','usbc','microsd','on','rec','off','charge'];
 const L=(s,t,d)=>`<button class="row" data-led="${s}" aria-pressed="false"><span class="led" data-led="${s}"></span><span><b>${t}</b><small>${d}</small></span></button>`;
 const TX={
-id:{ui:{g:['Komponen Topi','Cara Penggunaan'],reset:'Atur ulang tampilan',hint:'Seret untuk memutar, cubit untuk zoom',tap:'Ketuk untuk melihat kedipnya di model 3D',prev:'Sebelumnya',next:'Berikutnya',menu:{camera:'Modul Kamera',battery:'Baterai',usbc:'Slot USB-C',microsd:'Slot Micro SD Card',on:'Turn on',rec:'Recording',off:'Turn off'}},
- home:{t:'Panduan Mono Hat',lead:'Kenali bagian-bagian topi, lalu pelajari cara menyalakan, merekam, dan mematikannya. Putar model 3D untuk melihat tiap komponen dari dekat.',sub:['Modul kamera, baterai, dan slot','Turn on, recording, turn off']},
+id:{ui:{g:['Komponen Topi','Cara Penggunaan','Cara Pengisian Baterai'],reset:'Atur ulang tampilan',hint:'Seret untuk memutar, cubit untuk zoom',tap:'Ketuk untuk melihat kedipnya di model 3D',prev:'Sebelumnya',next:'Berikutnya',menu:{camera:'Modul Kamera',battery:'Baterai',usbc:'Slot USB-C',microsd:'Slot Micro SD Card',on:'Turn on',rec:'Recording',off:'Turn off',charge:'Cara Pengisian Baterai'}},
+ home:{t:'Panduan Mono Hat',lead:'Kenali bagian-bagian topi, lalu pelajari cara menyalakan, merekam, dan mematikannya. Putar model 3D untuk melihat tiap komponen dari dekat.',sub:['Modul kamera, baterai, dan slot','Turn on, recording, turn off','Dua cara mengisi daya']},
  camera:{t:'Modul Kamera',lead:'Modul kamera ada di bagian bawah visor topi. Di sinilah lensa, tombol, dan lampu LED indikator berada.',p:['Lensa merekam video. Jaga tetap bersih dan tidak tertutup.','Tombol dipakai untuk menyalakan, merekam, mengecek baterai, dan mematikan topi.','Lampu LED menunjukkan status topi lewat warna dan pola kedipnya.']},
  battery:{t:'Baterai',lead:'Baterai berada di bagian belakang topi.',p:['Cek sisa baterai saat merekam dengan satu kali tekan. Rekaman tidak terhenti.','Kedip merah dua kali berarti baterai lemah.'],more:'Lihat arti semua lampu di halaman Recording →'},
  usbc:{t:'Slot USB-C',lead:'Slot USB-C ada di bagian belakang topi, tertutup penutup kecil.',p:['Angkat penutup lewat tab kecilnya.','Tutup kembali penutup setelah selesai dipakai.']},
  microsd:{t:'Slot Micro SD Card',lead:'Tempat kartu memori untuk menyimpan hasil rekaman.',p:['Pasang kartu Micro SD sebelum mulai merekam.','Pastikan kartu terpasang dengan benar di slotnya.']},
  on:{t:'Turn on',lead:'Menyalakan topi.',s:['Tekan dan tahan tombol di modul kamera (long press).','Lampu LED menyala hijau solid. Topi sudah menyala.'],led:['Hijau solid','Topi menyala']},
  rec:{t:'Recording',lead:'Mulai merekam, cek baterai, dan kenali indikator masalah.',s:['Tekan tombol 3 kali (triple press).','Lampu LED berkedip biru pelan. Topi sedang merekam.','Untuk cek baterai, tekan tombol satu kali saat merekam.'],rec:['Biru kedip pelan','Sedang merekam'],bt:'Status baterai',b:[['Hijau kedip 2x','Baterai penuh'],['Oranye kedip 2x','Baterai normal'],['Merah kedip 2x','Baterai lemah']],n:['Mengecek baterai tidak menghentikan rekaman.','Tidak ada fitur pause. Rekaman hanya berhenti jika kamera berhenti.'],pt:'Indikator masalah',pr:[['Merah kedip 2x','Baterai lemah'],['Merah kedip pelan','Overheat (terlalu panas)'],['Merah kedip cepat','Masalah pada perangkat']]},
- off:{t:'Turn off',lead:'Mematikan topi.',s:['Tekan dan tahan tombol (long press) sampai topi mati.']}},
-en:{ui:{g:['Hat Components','How to Use'],reset:'Reset view',hint:'Drag to rotate, pinch to zoom',tap:'Tap to preview the blink on the 3D model',prev:'Previous',next:'Next',menu:{camera:'Camera Module',battery:'Battery',usbc:'USB-C Slot',microsd:'Micro SD Card Slot',on:'Turn on',rec:'Recording',off:'Turn off'}},
- home:{t:'Mono Hat Guide',lead:'Get to know the parts of the hat, then learn how to turn it on, record, and turn it off. Rotate the 3D model to look at each component up close.',sub:['Camera module, battery, and slots','Turn on, recording, turn off']},
+ off:{t:'Turn off',lead:'Mematikan topi.',s:['Tekan dan tahan tombol (long press) sampai topi mati.']},
+ charge:{t:'Cara Pengisian Baterai',lead:'Ada 2 cara mengisi baterai Mono Hat lewat charger USB-C.',m1t:'Cara 1: Diisi semalaman',m1:['Colokkan charger USB-C ke slot USB-C topi.','Biarkan semalaman selama topi tidak digunakan.'],m2t:'Cara 2: Sambil dinyalakan',m2:['Colokkan charger USB-C ke slot USB-C topi.','Nyalakan topi (turn on).','LED berkedip hijau berarti baterai sedang diisi.','Jika kedipnya berhenti, baterai sudah penuh.'],led:['Hijau berkedip','Sedang charging'],n:'Jika baterai benar-benar habis, diamkan dulu selama 5 menit sebelum menyalakan topi (turn on).'}},
+en:{ui:{g:['Hat Components','How to Use','Charging the Battery'],reset:'Reset view',hint:'Drag to rotate, pinch to zoom',tap:'Tap to preview the blink on the 3D model',prev:'Previous',next:'Next',menu:{camera:'Camera Module',battery:'Battery',usbc:'USB-C Slot',microsd:'Micro SD Card Slot',on:'Turn on',rec:'Recording',off:'Turn off',charge:'Charging the Battery'}},
+ home:{t:'Mono Hat Guide',lead:'Get to know the parts of the hat, then learn how to turn it on, record, and turn it off. Rotate the 3D model to look at each component up close.',sub:['Camera module, battery, and slots','Turn on, recording, turn off','Two ways to charge']},
  camera:{t:'Camera Module',lead:'The camera module sits under the hat’s brim. It holds the lens, the button, and the LED indicator.',p:['The lens records video. Keep it clean and uncovered.','The button turns the hat on, starts recording, checks the battery, and turns the hat off.','The LED shows the hat’s status through its color and blink pattern.']},
  battery:{t:'Battery',lead:'The battery is at the back of the hat.',p:['Check the battery while recording with a single press. Recording keeps going.','A double red blink means low battery.'],more:'See what every light means on the Recording page →'},
  usbc:{t:'USB-C Slot',lead:'The USB-C slot is at the back of the hat, behind a small cover.',p:['Lift the cover using its small tab.','Close the cover again when you’re done.']},
  microsd:{t:'Micro SD Card Slot',lead:'The memory card slot where your recordings are stored.',p:['Insert a Micro SD card before you start recording.','Make sure the card is seated properly in the slot.']},
  on:{t:'Turn on',lead:'Powering on the hat.',s:['Press and hold the button on the camera module (long press).','The LED turns solid green. The hat is on.'],led:['Solid green','Hat is on']},
  rec:{t:'Recording',lead:'Start recording, check the battery, and learn the problem indicators.',s:['Press the button 3 times (triple press).','The LED blinks blue slowly. The hat is recording.','To check the battery, press the button once while recording.'],rec:['Slow blue blink','Recording'],bt:'Battery status',b:[['Double green blink','Full battery'],['Double orange blink','Normal battery'],['Double red blink','Low battery']],n:['Checking the battery does not pause the recording.','There is no pause. Recording only stops if the camera stops.'],pt:'Problem indicators',pr:[['Double red blink','Low battery'],['Slow red blink','Overheated'],['Fast red blink','Device issue']]},
- off:{t:'Turn off',lead:'Powering off the hat.',s:['Press and hold the button (long press) until the hat turns off.']}}};
+ off:{t:'Turn off',lead:'Powering off the hat.',s:['Press and hold the button (long press) until the hat turns off.']},
+ charge:{t:'Charging the Battery',lead:'There are 2 ways to charge the Mono Hat with a USB-C charger.',m1t:'Method 1: Charge overnight',m1:['Plug the USB-C charger into the hat’s USB-C slot.','Leave it overnight while the hat is not in use.'],m2t:'Method 2: Charge while turned on',m2:['Plug the USB-C charger into the hat’s USB-C slot.','Turn the hat on.','A blinking green LED means the battery is charging.','When the blinking stops, the battery is full.'],led:['Blinking green','Charging'],n:'If the battery is completely drained, let it sit for 5 minutes before turning the hat on.'}}};
 const $=q=>document.querySelector(q);
 let lang='id',route='home',ledSpec=null;
 try{lang=localStorage.getItem('mh-lang')||'id'}catch(e){}
 const ol=a=>`<ol class="steps">${a.map(x=>`<li><span>${x}</span></li>`).join('')}</ol>`;
 const ul=a=>`<ul class="pts">${a.map(x=>`<li>${x}</li>`).join('')}</ul>`;
 function body(r,t){const x=t[r];let h='';
- if(r==='home')return `<p class="crumb">MONO HAT</p><h1>${x.t}</h1><p class="lead">${x.lead}</p><div class="tiles"><a class="tile" href="#camera">${t.ui.g[0]}<small>${x.sub[0]}</small></a><a class="tile" href="#on">${t.ui.g[1]}<small>${x.sub[1]}</small></a></div>`;
+ if(r==='home')return `<p class="crumb">MONO HAT</p><h1>${x.t}</h1><p class="lead">${x.lead}</p><div class="tiles"><a class="tile" href="#camera">${t.ui.g[0]}<small>${x.sub[0]}</small></a><a class="tile" href="#on">${t.ui.g[1]}<small>${x.sub[1]}</small></a><a class="tile" style="grid-column:1/-1" href="#charge">${t.ui.g[2]}<small>${x.sub[2]}</small></a></div>`;
  h+=`<p class="crumb">${t.ui.g[PG[r].g]}</p><h1>${x.t}</h1><p class="lead">${x.lead}</p>`;
  if(x.p)h+=ul(x.p);if(x.s)h+=ol(x.s);
  if(x.more)h+=`<p><a href="#rec">${x.more}</a></p>`;
+ if(r==='charge')h+=`<h2>${x.m1t}</h2>`+ol(x.m1)+`<h2>${x.m2t}</h2>`+ol(x.m2)+`<div class="rows">${L('green:slow',x.led[0],x.led[1])}</div><div class="note">${x.n}</div>`;
  if(r==='on')h+=`<div class="rows">${L('green:solid',x.led[0],x.led[1])}</div>`;
  if(r==='rec'){h+=`<div class="rows">${L('blue:slow',x.rec[0],x.rec[1])}</div><h2>${x.bt}</h2><div class="rows">${L('green:double',x.b[0][0],x.b[0][1])}${L('orange:double',x.b[1][0],x.b[1][1])}${L('red:double',x.b[2][0],x.b[2][1])}</div>`+x.n.map(n=>`<div class="note">${n}</div>`).join('')+`<h2>${x.pt}</h2><div class="rows">${L('red:double',x.pr[0][0],x.pr[0][1])}${L('red:slow',x.pr[1][0],x.pr[1][1])}${L('red:fast',x.pr[2][0],x.pr[2][1])}</div>`;}
- if(r==='on'||r==='rec')h+=`<p class="lead" style="margin-top:12px;font-size:13px">${t.ui.tap}</p>`;
+ if(r==='on'||r==='rec'||r==='charge')h+=`<p class="lead" style="margin-top:12px;font-size:13px">${t.ui.tap}</p>`;
  const i=ORDER.indexOf(r),pv=ORDER[i-1],nx=ORDER[i+1];
  h+=`<div class="pager">${pv?`<a href="#${pv}"><small>← ${t.ui.prev}</small>${t.ui.menu[pv]}</a>`:'<span></span>'}${nx?`<a href="#${nx}"><small>${t.ui.next} →</small>${t.ui.menu[nx]}</a>`:'<span></span>'}</div>`;
  return h}
-function nav(t){$('#nav').innerHTML=[[0,['camera','battery','usbc','microsd']],[1,['on','rec','off']]].map(([g,a])=>`<div class="grp"><button class="gl">${t.ui.g[g]}</button><div class="dd">${a.map(k=>`<a href="#${k}" data-r="${k}">${t.ui.menu[k]}</a>`).join('')}</div></div>`).join('')}
+function nav(t){$('#nav').innerHTML=[[0,['camera','battery','usbc','microsd']],[1,['on','rec','off']]].map(([g,a])=>`<div class="grp"><button class="gl">${t.ui.g[g]}</button><div class="dd">${a.map(k=>`<a href="#${k}" data-r="${k}">${t.ui.menu[k]}</a>`).join('')}</div></div>`).join('')+`<a class="gl lk" href="#charge" data-r="charge">${t.ui.g[2]}</a>`}
 function paint(){const t=TX[lang];document.documentElement.lang=lang;nav(t);
  $('#content').innerHTML=body(route,t);$('#reset').textContent=t.ui.reset;$('#vh').textContent=t.ui.hint;
  $('#vl').textContent=route==='home'?'MONO HAT':t.ui.menu[route];
  document.title='Mono Hat – '+(route==='home'?t.home.t:t[route].t);
  document.querySelectorAll('[data-r]').forEach(a=>a.getAttribute('data-r')===route&&a.setAttribute('aria-current','page'));
  document.querySelectorAll('.lang button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.l===lang));
- const d=document.querySelector('.row');if(d)d.setAttribute('aria-pressed','true')}
+ const d=document.querySelector('.row');if(d&&PG[route].led)d.setAttribute('aria-pressed','true')}
 let fly=false,tgt=new THREE.Vector3(),pos=new THREE.Vector3();
 function go(){const p=PG[route];const v=V[p.v];tgt.set(...v[0]);pos.set(...v[1]);fly=true;ctl.autoRotate=route==='home';ledSpec=parse(p.led)}
 function setRoute(){const h=location.hash.slice(1);route=PG[h]?h:'home';paint();go();$('#nav').classList.remove('open');$('#burger').setAttribute('aria-expanded','false');window.scrollTo({top:0})}
@@ -184,7 +189,7 @@ addEventListener('hashchange',setRoute);
 document.addEventListener('click',e=>{
  const g=e.target.closest('.grp');document.querySelectorAll('.grp').forEach(x=>x!==g&&x.classList.remove('open'));
  if(g&&e.target.closest('.gl'))g.classList.toggle('open');else if(e.target.closest('.dd a'))document.querySelectorAll('.grp').forEach(x=>x.classList.remove('open'));
- const r=e.target.closest('.row');if(r){document.querySelectorAll('.row').forEach(x=>x.setAttribute('aria-pressed',x===r));ledSpec=parse(r.dataset.led)}
+ const r=e.target.closest('.row');if(r){document.querySelectorAll('.row').forEach(x=>x.setAttribute('aria-pressed',x===r));ledSpec=parse(r.dataset.led);if(route==='charge'){tgt.set(...V.led[0]);pos.set(...V.led[1]);fly=true}}
  const l=e.target.closest('.lang button');if(l){lang=l.dataset.l;try{localStorage.setItem('mh-lang',lang)}catch(_){}paint()}
 });
 $('#burger').onclick=()=>{const o=$('#nav').classList.toggle('open');$('#burger').setAttribute('aria-expanded',o)};
